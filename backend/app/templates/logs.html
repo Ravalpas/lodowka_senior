@@ -1,0 +1,47 @@
+<!-- Strona logów systemowych -->
+<!-- Logi zdarzeń systemowych (głównie dla administratorów) -->
+{% extends "base.html" %}
+
+{% block title %}Logi systemowe - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Logi systemowe</h1>
+        <button class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" id="exportLogsBtn">
+            Eksportuj logi
+        </button>
+    </div>
+    
+    <!-- TODO: Filtry -->
+    <!-- TODO: Filtr po poziomie (INFO, WARNING, ERROR) -->
+    <!-- TODO: Filtr po użytkowniku -->
+    <!-- TODO: Filtr po zakresie dat -->
+    <!-- TODO: Wyszukiwanie w treści -->
+    
+    <div class="mb-6 flex space-x-4">
+        <select id="logLevelFilter" class="border rounded px-3 py-2">
+            <option value="">Wszystkie poziomy</option>
+            <option value="INFO">INFO</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+        </select>
+        
+        <input type="text" id="logSearch" class="border rounded px-3 py-2 flex-1" placeholder="Szukaj w logach...">
+    </div>
+    
+    <!-- TODO: Tabela z logami -->
+    <!-- TODO: Kolorowanie wierszy według poziomu -->
+    <!-- TODO: Szczegóły w rozwijanych sekcjach -->
+    
+    <div id="logsTable">
+        <!-- Tabela będzie wypełniana przez JavaScript -->
+    </div>
+    
+    <!-- TODO: Paginacja -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- TODO: JavaScript do pobierania i wyświetlania logów -->
+{% endblock %}

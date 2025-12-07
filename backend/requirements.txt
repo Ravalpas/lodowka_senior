@@ -1,0 +1,24 @@
+# Zależności aplikacji Flask - Lodówka Senior+
+# Instalacja: pip install -r requirements.txt
+
+# Flask i podstawowe rozszerzenia
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.6.0
+
+# Baza danych
+PyMySQL==1.1.0
+cryptography==41.0.7
+
+# Bezpieczeństwo
+Werkzeug==3.0.1
+bcrypt==4.1.2
+
+# Zmienne środowiskowe
+python-dotenv==1.0.0
+
+# TODO: Dodać w razie potrzeby:
+# Flask-CORS==4.0.0  # Jeśli frontend będzie w osobnej domenie
+# Flask-Migrate==4.0.5  # Do zarządzania migracjami bazy danych
+# email-validator==2.1.0  # Walidacja emaili
+# APScheduler==3.10.4  # Do schedulowania powiadomień

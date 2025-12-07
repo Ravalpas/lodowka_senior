@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Dodaj Produkt - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-8 px-4">
+    <div class="max-w-3xl mx-auto">
+        <!-- Nagłówek -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('fridge.fridge_page') }}" 
+                   class="text-gray-600 hover:text-gray-800 transition-colors">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h1 class="text-4xl font-bold text-gray-800">
+                    ➕ Dodaj Produkt do Lodówki
+                </h1>
+            </div>
+        </div>
+
+        <!-- Komunikaty -->
+        {% if success %}
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg shadow-md" role="alert">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <p class="font-bold text-xl">{{ success }}</p>
+            </div>
+            <div class="mt-4">
+                <a href="{{ url_for('fridge.fridge_page') }}" 
+                   class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md transition-all">
+                    Wróć do lodówki
+                </a>
+                <a href="{{ url_for('fridge.add_fridge_item_page') }}" 
+                   class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md transition-all ml-3">
+                    Dodaj kolejny produkt
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-md" role="alert">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <p class="font-bold text-xl">{{ error }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formularz -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <form method="POST" action="{{ url_for('fridge.add_fridge_item') }}" class="space-y-6">
+                
+                <!-- Nazwa produktu -->
+                <div>
+                    <label for="nazwa" class="block text-2xl font-semibold text-gray-700 mb-2">
+                        Nazwa produktu <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="nazwa" 
+                           name="nazwa" 
+                           required
+                           placeholder="np. Mleko 2%" 
+                           class="w-full px-6 py-4 text-xl border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Kod kreskowy (opcjonalny) -->
+                <div>
+                    <label for="barcode" class="block text-2xl font-semibold text-gray-700 mb-2">
+                        Kod kreskowy (opcjonalnie)
+                    </label>
+                    <input type="text" 
+                           id="barcode" 
+                           name="barcode" 
+                           placeholder="np. 5901234123457" 
+                           maxlength="32"
+                           class="w-full px-6 py-4 text-xl border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none">
+                    <p class="text-gray-500 text-sm mt-2">Możesz wprowadzić kod kreskowy z opakowania</p>
+                </div>
+
+                <!-- Ilość i jednostka -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="ilosc" class="block text-2xl font-semibold text-gray-700 mb-2">
+                            Ilość <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" 
+                               id="ilosc" 
+                               name="ilosc" 
+                               required
+                               min="1"
+                               step="1"
+                               placeholder="1" 
+                               class="w-full px-6 py-4 text-xl border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label for="jednostka" class="block text-2xl font-semibold text-gray-700 mb-2">
+                            Jednostka <span class="text-red-500">*</span>
+                        </label>
+                        <select id="jednostka" 
+                                name="jednostka" 
+                                required
+                                class="w-full px-6 py-4 text-xl border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none bg-white">
+                            <option value="szt">Sztuka (szt)</option>
+                            <option value="g">Gramy (g)</option>
+                            <option value="kg">Kilogramy (kg)</option>
+                            <option value="ml">Mililitry (ml)</option>
+                            <option value="l">Litry (l)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Data ważności -->
+                <div>
+                    <label for="wazne_do" class="block text-2xl font-semibold text-gray-700 mb-2">
+                        Data ważności (opcjonalnie)
+                    </label>
+                    <input type="date" 
+                           id="wazne_do" 
+                           name="wazne_do" 
+                           class="w-full px-6 py-4 text-xl border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none">
+                    <p class="text-gray-500 text-sm mt-2">Zostaniesz powiadomiony gdy produkt będzie blisko wygaśnięcia</p>
+                </div>
+
+                <!-- Przyciski -->
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-5 px-8 rounded-xl text-2xl shadow-lg transition-all transform hover:scale-105">
+                        ✓ Dodaj do Lodówki
+                    </button>
+                    <a href="{{ url_for('fridge.fridge_page') }}" 
+                       class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-5 px-8 rounded-xl text-2xl shadow-lg transition-all transform hover:scale-105 text-center">
+                        Anuluj
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Wskazówki -->
+        <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-bold text-blue-800 mb-3">💡 Wskazówki:</h3>
+            <ul class="list-disc list-inside text-blue-700 space-y-2 text-lg">
+                <li>Podaj pełną nazwę produktu, np. "Mleko UHT 2%" zamiast tylko "Mleko"</li>
+                <li>Wybierz odpowiednią jednostkę - dla produktów spożywczych najczęściej "sztuka"</li>
+                <li>Wprowadzenie daty ważności pomoże śledzić świeżość produktów</li>
+                <li>Kod kreskowy przyspieszy dodawanie produktu w przyszłości</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

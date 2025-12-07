@@ -1,0 +1,27 @@
+/* Główny plik CSS aplikacji - Tailwind CSS input */
+/* Po skonfigurowaniu Tailwind CLI, ten plik będzie kompilowany do styles.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TODO: Dodać customowe style aplikacji */
+/* TODO: Konfiguracja kolorów dla marki */
+/* TODO: Customowe komponenty */
+
+/* Przykładowe custom utilities */
+@layer components {
+    .btn-primary {
+        @apply bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition;
+    }
+    
+    .btn-danger {
+        @apply bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition;
+    }
+    
+    .card {
+        @apply bg-white rounded-lg shadow-md p-6;
+    }
+}
+
+/* TODO: Dodać responsywne style dla seniorów (większe przyciski, fonty) */

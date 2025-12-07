@@ -1,0 +1,42 @@
+<!-- Strona historii operacji -->
+<!-- Historia wszystkich operacji na produktach -->
+{% extends "base.html" %}
+
+{% block title %}Historia operacji - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h1 class="text-2xl font-bold mb-6">Historia operacji</h1>
+    
+    <!-- TODO: Filtry -->
+    <!-- TODO: Filtr po typie operacji (dodanie, usunięcie, aktualizacja) -->
+    <!-- TODO: Filtr po zakresie dat -->
+    <!-- TODO: Filtr po produkcie -->
+    
+    <div class="mb-6 flex space-x-4">
+        <select id="operationTypeFilter" class="border rounded px-3 py-2">
+            <option value="">Wszystkie operacje</option>
+            <option value="add">Dodano</option>
+            <option value="remove">Usunięto</option>
+            <option value="update">Zaktualizowano</option>
+        </select>
+        
+        <input type="date" id="dateFrom" class="border rounded px-3 py-2" placeholder="Od">
+        <input type="date" id="dateTo" class="border rounded px-3 py-2" placeholder="Do">
+    </div>
+    
+    <!-- TODO: Timeline z operacjami -->
+    <!-- TODO: Formatowanie dat -->
+    <!-- TODO: Ikony dla różnych typów operacji -->
+    
+    <div id="historyTimeline">
+        <!-- Timeline będzie wypełniany przez JavaScript -->
+    </div>
+    
+    <!-- TODO: Paginacja -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- TODO: JavaScript do pobierania i wyświetlania historii -->
+{% endblock %}

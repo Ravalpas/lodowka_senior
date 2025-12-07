@@ -1,0 +1,320 @@
+{# backend/app/templates/fridge.html #}
+{% extends "base.html" %}
+
+{% block title %}Moja Lodówka - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Nagłówek strony -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-2">
+                    🧊 Moja Lodówka
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Zarządzaj produktami w lodówce, zużywaj je na czas i ogranicz marnowanie jedzenia.
+                </p>
+            </div>
+            <div class="flex flex-col gap-3">
+                <a href="{{ url_for('fridge.add_fridge_item_page') }}"
+                   class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl text-xl shadow-md text-center">
+                    ➕ Dodaj produkt
+                </a>
+                <a href="{{ url_for('fridge.expiring_page') }}"
+                   class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl text-xl shadow-md text-center">
+                    ⚠️ Wygasające produkty
+                </a>
+            </div>
+        </div>
+
+        <!-- Info gdy brak produktów -->
+        {% if not items or items|length == 0 %}
+        <div class="bg-white rounded-2xl shadow-xl p-10 text-center">
+            <div class="text-6xl mb-4">🧺</div>
+            <h2 class="text-3xl font-semibold text-gray-700 mb-3">
+                Twoja lodówka jest pusta
+            </h2>
+            <p class="text-lg text-gray-600 mb-6">
+                Dodaj pierwsze produkty, aby zacząć korzystać z Lodówki Senior+.
+            </p>
+            <a href="{{ url_for('fridge.add_fridge_item_page') }}"
+               class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-10 rounded-xl text-2xl shadow-md">
+                ➕ Dodaj produkt
+            </a>
+        </div>
+        {% else %}
+
+        <!-- Lista produktów -->
+        <div class="space-y-4">
+            {% for item in items %}
+            <div id="item-{{ item.id }}"
+                 class="bg-white rounded-2xl shadow-lg p-5 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-l-8
+                        {% if item.expiry_status == 'expired' %}border-red-600
+                        {% elif item.expiry_status == 'today' %}border-orange-500
+                        {% elif item.expiry_status == 'tomorrow' %}border-yellow-500
+                        {% elif item.expiry_status == 'soon' %}border-yellow-300
+                        {% else %}border-green-500{% endif %}">
+
+                <!-- Lewa część: nazwa + info -->
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">
+                            {{ item.nazwa }}
+                        </h2>
+
+                        {% if item.expiry_status == 'expired' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">
+                                ⛔ Przeterminowane
+                            </span>
+                        {% elif item.expiry_status == 'today' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-700">
+                                ⏰ Ważne do dziś
+                            </span>
+                        {% elif item.expiry_status == 'tomorrow' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">
+                                ⚡ Ważne do jutra
+                            </span>
+                        {% elif item.expiry_status == 'soon' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">
+                                🔔 Wygasa wkrótce
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 text-lg text-gray-700 mt-1">
+                        <div>
+                            <span class="font-semibold text-blue-700 text-xl">
+                                {{ item.ilosc }}
+                            </span>
+                            <span>{{ item.jednostka }}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <span>📅</span>
+                            <span>Ważne do: <strong>{{ item.wazne_do }}</strong></span>
+                        </div>
+
+                        {% if item.days_left_text %}
+                        <div class="flex items-center gap-2">
+                            <span>⏳</span>
+                            <span>{{ item.days_left_text }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Prawa część: przyciski -->
+                <div class="flex flex-row md:flex-col gap-3 md:items-end">
+                    <!-- Zużyj -->
+                    <button
+                        data-item-id="{{ item.id }}"
+                        data-item-nazwa="{{ item.nazwa }}"
+                        data-item-ilosc="{{ item.ilosc }}"
+                        data-item-jednostka="{{ item.jednostka }}"
+                        onclick="openConsumeModal(this.dataset.itemId, this.dataset.itemNazwa, parseFloat(this.dataset.itemIlosc), this.dataset.itemJednostka)"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md transition-all">
+                        ✓ Zużyj
+                    </button>
+
+                    <!-- Wyrzuć -->
+                    <button
+                        data-item-id="{{ item.id }}"
+                        data-item-nazwa="{{ item.nazwa }}"
+                        onclick="openDiscardModal(this.dataset.itemId, this.dataset.itemNazwa)"
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md transition-all">
+                        🗑️ Wyrzuć
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<!-- MODAL ZUŻYCIA -->
+<div id="consumeModal"
+     class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+            Zużyj produkt
+        </h2>
+        <p class="mb-4 text-lg text-gray-700">
+            Produkt: <span id="consumeProductName" class="font-semibold"></span><br>
+            Dostępna ilość: <span id="consumeAvailable" class="font-semibold"></span>
+            <span id="consumeUnit"></span>
+        </p>
+
+        <form id="consumeForm" method="POST" onsubmit="return validateConsumeForm()">
+            <input type="hidden" name="item_id" id="consumeItemId">
+
+            <label class="block mb-3 text-lg font-semibold text-gray-800">
+                Wybierz ilość do zużycia:
+            </label>
+            <div id="consumeButtons" class="flex flex-wrap gap-3 mb-5">
+                <!-- przyciski z JS -->
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="button"
+                        onclick="closeConsumeModal()"
+                        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold">
+                    Anuluj
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                    ✓ Zużyj
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL WYRZUCENIA -->
+<div id="discardModal"
+     class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+            Wyrzuć produkt
+        </h2>
+        <p class="mb-6 text-lg text-gray-700">
+            Czy na pewno chcesz <strong>wyrzucić</strong> produkt:
+            <span id="discardProductName" class="font-semibold"></span>?
+        </p>
+
+        <form id="discardForm" method="POST">
+            <input type="hidden" name="item_id" id="discardItemId">
+
+            <div class="flex justify-end gap-3">
+                <button type="button"
+                        onclick="closeDiscardModal()"
+                        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold">
+                    Anuluj
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold">
+                    🗑️ Wyrzuć
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SKRYPTY DO MODALI -->
+<script>
+// Walidacja formularza zużycia
+function validateConsumeForm() {
+    console.log('validateConsumeForm called');
+    const hidden = document.getElementById('consumeAmountHidden');
+    console.log('Hidden input:', hidden);
+    console.log('Hidden value:', hidden ? hidden.value : 'NOT FOUND');
+    
+    if (!hidden || !hidden.value) {
+        alert('Proszę wybrać ilość do zużycia!');
+        return false;
+    }
+    console.log('Form validation passed, submitting...');
+    return true;
+}
+
+// pomocniczo – generowanie przycisków zużycia
+function getConsumeSteps(unit) {
+    if (unit === 'szt') {
+        return [1];
+    }
+    if (unit === 'ml') {
+        return [1, 10, 50, 100, 500, 1000];
+    }
+    if (unit === 'g') {
+        return [1, 10, 50, 100, 1000];
+    }
+    return [1];
+}
+
+function openConsumeModal(id, nazwa, ilosc, jednostka) {
+    console.log('openConsumeModal called', {id, nazwa, ilosc, jednostka});
+    const modal = document.getElementById('consumeModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    document.getElementById('consumeProductName').innerText = nazwa;
+    document.getElementById('consumeAvailable').innerText = ilosc;
+    document.getElementById('consumeUnit').innerText = jednostka;
+    document.getElementById('consumeItemId').value = id;
+
+    const form = document.getElementById('consumeForm');
+    form.action = `/fridge/consume/${id}`;
+
+    // Usuń stary hidden input jeśli istnieje
+    const oldHidden = document.getElementById('consumeAmountHidden');
+    if (oldHidden) {
+        oldHidden.remove();
+    }
+
+    const container = document.getElementById('consumeButtons');
+    container.innerHTML = '';
+
+    const steps = getConsumeSteps(jednostka);
+    steps.forEach(step => {
+        if (step <= ilosc) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'px-4 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold';
+            btn.innerText = `${step} ${jednostka}`;
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Consume button clicked:', step);
+                
+                let hidden = document.getElementById('consumeAmountHidden');
+                if (!hidden) {
+                    console.log('Creating new hidden input');
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'ilosc';
+                    hidden.id = 'consumeAmountHidden';
+                    form.appendChild(hidden);
+                }
+                hidden.value = step;
+                console.log('Hidden input value set to:', step);
+                
+                // Podświetl wybrany przycisk
+                container.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-blue-100', 'text-blue-800');
+                });
+                btn.classList.remove('bg-blue-100', 'text-blue-800');
+                btn.classList.add('bg-blue-500', 'text-white');
+            };
+            container.appendChild(btn);
+        }
+    });
+}
+
+function closeConsumeModal() {
+    const modal = document.getElementById('consumeModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
+
+function openDiscardModal(id, nazwa) {
+    const modal = document.getElementById('discardModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    document.getElementById('discardProductName').innerText = nazwa;
+    document.getElementById('discardItemId').value = id;
+
+    const form = document.getElementById('discardForm');
+    form.action = `/fridge/discard/${id}`;
+}
+
+function closeDiscardModal() {
+    const modal = document.getElementById('discardModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
+</script>
+{% endblock %}

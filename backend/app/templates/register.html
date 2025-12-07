@@ -1,0 +1,140 @@
+<!-- Strona rejestracji -->
+<!-- Formularz rejestracji nowego użytkownika -->
+{% extends "base.html" %}
+
+{% block title %}Rejestracja - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Załóż konto w Lodówka Senior+
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Dołącz do tysięcy użytkowników i zacznij oszczędzać!
+            </p>
+        </div>
+        
+        <form class="mt-8 space-y-6" action="{{ url_for('auth.register') }}" method="POST">
+            <div class="rounded-md shadow-sm space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Adres email *
+                    </label>
+                    <input 
+                        id="email" 
+                        name="email" 
+                        type="email" 
+                        autocomplete="email" 
+                        required 
+                        class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="twoj@email.pl">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="imie" class="block text-sm font-medium text-gray-700 mb-1">
+                            Imię
+                        </label>
+                        <input 
+                            id="imie" 
+                            name="imie" 
+                            type="text" 
+                            autocomplete="given-name"
+                            class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            placeholder="Jan">
+                    </div>
+                    <div>
+                        <label for="nazwisko" class="block text-sm font-medium text-gray-700 mb-1">
+                            Nazwisko
+                        </label>
+                        <input 
+                            id="nazwisko" 
+                            name="nazwisko" 
+                            type="text" 
+                            autocomplete="family-name"
+                            class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            placeholder="Kowalski">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Hasło *
+                    </label>
+                    <input 
+                        id="password" 
+                        name="password" 
+                        type="password" 
+                        autocomplete="new-password" 
+                        required 
+                        minlength="6"
+                        class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="Minimum 6 znaków">
+                    <p class="mt-1 text-xs text-gray-500">Minimum 6 znaków</p>
+                </div>
+
+                <div>
+                    <label for="password_confirm" class="block text-sm font-medium text-gray-700 mb-1">
+                        Potwierdź hasło *
+                    </label>
+                    <input 
+                        id="password_confirm" 
+                        name="password_confirm" 
+                        type="password" 
+                        autocomplete="new-password" 
+                        required 
+                        minlength="6"
+                        class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="Powtórz hasło">
+                </div>
+            </div>
+
+            <div class="flex items-center">
+                <input 
+                    id="terms" 
+                    name="terms" 
+                    type="checkbox" 
+                    required
+                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                <label for="terms" class="ml-2 block text-sm text-gray-900">
+                    Akceptuję regulamin i politykę prywatności
+                </label>
+            </div>
+
+            <div>
+                <button 
+                    type="submit" 
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                    Załóż konto
+                </button>
+            </div>
+
+            <div class="text-center">
+                <p class="text-sm text-gray-600">
+                    Masz już konto? 
+                    <a href="{{ url_for('auth.login_page') }}" class="font-medium text-green-600 hover:text-green-500">
+                        Zaloguj się
+                    </a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Walidacja zgodności haseł
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('password_confirm').value;
+        
+        if (password !== passwordConfirm) {
+            e.preventDefault();
+            alert('Hasła nie są identyczne!');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+<!-- Strona produktów wygasających - senior-friendly design -->
+{% extends "base.html" %}
+
+{% block title %}Produkty Wygasające - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 py-8 px-4">
+    <div class="max-w-5xl mx-auto">
+        
+        <!-- Nagłówek -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('fridge.fridge_page') }}" 
+                       class="text-gray-600 hover:text-gray-800 transition-colors">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </a>
+                    <h1 class="text-4xl font-bold text-orange-700">
+                        ⏰ Produkty Wygasające
+                    </h1>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg text-gray-600">Produkty wymagające uwagi</p>
+                    <p class="text-2xl font-bold text-orange-600">{{ items|length }} pozycji</p>
+                </div>
+            </div>
+        </div>
+
+        {% if items|length == 0 %}
+        <!-- Brak produktów wygasających -->
+        <div class="bg-green-50 border-2 border-green-300 rounded-2xl p-12 text-center">
+            <div class="text-8xl mb-6">✅</div>
+            <h2 class="text-3xl font-bold text-green-700 mb-4">Świetnie!</h2>
+            <p class="text-2xl text-green-600">Nie masz produktów, które wkrótce wygasają</p>
+            <div class="mt-8">
+                <a href="{{ url_for('fridge.fridge_page') }}" 
+                   class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-lg transition-all">
+                    Wróć do lodówki
+                </a>
+            </div>
+        </div>
+        {% else %}
+        
+        <!-- Legenda statusów -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">Znaczenie kolorów:</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-6 h-6 bg-red-500 rounded-full border-2 border-red-700"></div>
+                    <span class="text-lg">Przeterminowane</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-6 h-6 bg-orange-500 rounded-full border-2 border-orange-700"></div>
+                    <span class="text-lg">Dzisiaj</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-6 h-6 bg-yellow-400 rounded-full border-2 border-yellow-600"></div>
+                    <span class="text-lg">Jutro</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-6 h-6 bg-yellow-200 rounded-full border-2 border-yellow-400"></div>
+                    <span class="text-lg">Wkrótce</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista produktów -->
+        <div class="space-y-4">
+            {% for item in items %}
+            <div class="bg-white rounded-xl shadow-lg p-6 
+                        {% if item.expiry_status == 'expired' %}
+                            border-l-8 border-red-500
+                        {% elif item.expiry_status == 'today' %}
+                            border-l-8 border-orange-500
+                        {% elif item.expiry_status == 'tomorrow' %}
+                            border-l-8 border-yellow-400
+                        {% else %}
+                            border-l-8 border-yellow-200
+                        {% endif %}
+                        transform hover:scale-[1.02] transition-transform">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    
+                    <!-- Lewa część: informacje o produkcie -->
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ item.nazwa }}</h3>
+                        
+                        <div class="flex flex-wrap items-center gap-4 text-lg">
+                            <!-- Ilość -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl font-bold 
+                                    {% if item.expiry_status == 'expired' %}text-red-600
+                                    {% elif item.expiry_status == 'today' %}text-orange-600
+                                    {% elif item.expiry_status == 'tomorrow' %}text-yellow-600
+                                    {% else %}text-gray-700{% endif %}">
+                                    {{ item.ilosc }}
+                                </span>
+                                <span class="text-xl text-gray-600">{{ item.jednostka }}</span>
+                            </div>
+
+                            <!-- Data ważności -->
+                            <div class="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
+                                <span class="text-2xl">📅</span>
+                                <div>
+                                    <div class="text-sm text-gray-500">Ważne do:</div>
+                                    <div class="font-bold text-gray-800">{{ item.wazne_do }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="flex items-center gap-2 px-4 py-2 rounded-lg font-bold
+                                {% if item.expiry_status == 'expired' %}
+                                    bg-red-100 text-red-700
+                                {% elif item.expiry_status == 'today' %}
+                                    bg-orange-100 text-orange-700
+                                {% elif item.expiry_status == 'tomorrow' %}
+                                    bg-yellow-100 text-yellow-700
+                                {% else %}
+                                    bg-yellow-50 text-yellow-700
+                                {% endif %}">
+                                {% if item.expiry_status == 'expired' %}
+                                    <span class="text-2xl">❌</span>
+                                {% elif item.expiry_status == 'today' %}
+                                    <span class="text-2xl">⏰</span>
+                                {% elif item.expiry_status == 'tomorrow' %}
+                                    <span class="text-2xl">⚡</span>
+                                {% else %}
+                                    <span class="text-2xl">🔔</span>
+                                {% endif %}
+                                <span class="text-lg">{{ item.days_left }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prawa część: akcje -->
+                    <div class="flex flex-col gap-3">
+                        {% if item.expiry_status == 'expired' %}
+                        <!-- Przycisk wyrzuć dla przeterminowanych -->
+                        <form method="POST" action="{{ url_for('fridge.discard_fridge_item', item_id=item.id) }}" 
+                              onsubmit="return confirm('Czy na pewno chcesz wyrzucić ten produkt?');">
+                            <input type="hidden" name="group" value="true">
+                            <button type="submit" 
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg transition-all">
+                                🗑️ Wyrzuć
+                            </button>
+                        </form>
+                        {% else %}
+                        <!-- Przyciski dla produktów jeszcze ważnych -->
+                        <button onclick="openConsumeModal({{ item.id }}, '{{ item.nazwa }}', {{ item.ilosc }}, '{{ item.jednostka }}')"
+                                class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-lg transition-all">
+                            ✓ Zużyj
+                        </button>
+                        <form method="POST" action="{{ url_for('fridge.discard_fridge_item', item_id=item.id) }}" 
+                              onsubmit="return confirm('Czy na pewno chcesz wyrzucić ten produkt?');">
+                            <input type="hidden" name="group" value="true">
+                            <button type="submit"
+                                    class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-lg transition-all">
+                                🗑️ Wyrzuć
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Powrót do lodówki -->
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('fridge.fridge_page') }}" 
+               class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-lg transition-all">
+                ← Wróć do Lodówki
+            </a>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal zużycia produktu -->
+<div id="consumeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Zużyj produkt</h2>
+        
+        <form id="consumeForm" method="POST" action="">
+            <div class="mb-6">
+                <p class="text-xl text-gray-700 mb-4">
+                    Ile chcesz zużyć z produktu <strong id="modalProductName"></strong>?
+                </p>
+                <p class="text-lg text-gray-500 mb-4">
+                    Dostępne: <strong id="modalAvailable"></strong>
+                </p>
+            </div>
+
+            <!-- Przyciski szybkiego wyboru -->
+            <div class="grid grid-cols-3 gap-3 mb-6" id="quickButtons">
+                <!-- Generowane dynamicznie przez JS -->
+            </div>
+
+            <!-- Własna ilość -->
+            <div class="mb-6">
+                <label class="block text-xl font-semibold text-gray-700 mb-2">Lub podaj własną ilość:</label>
+                <input type="number" 
+                       name="ilosc" 
+                       id="customAmount"
+                       min="1"
+                       step="1"
+                       placeholder="Ilość"
+                       class="w-full px-6 py-4 text-2xl border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Przyciski akcji -->
+            <div class="flex gap-4">
+                <button type="submit" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg transition-all">
+                    ✓ Potwierdź
+                </button>
+                <button type="button" 
+                        onclick="closeConsumeModal()"
+                        class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg transition-all">
+                    Anuluj
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openConsumeModal(itemId, itemName, available, unit) {
+    document.getElementById('consumeModal').classList.remove('hidden');
+    document.getElementById('modalProductName').textContent = itemName;
+    document.getElementById('modalAvailable').textContent = available + ' ' + unit;
+    document.getElementById('consumeForm').action = `/fridge/consume/${itemId}`;
+    
+    // Generuj przyciski szybkiego wyboru
+    const quickButtons = document.getElementById('quickButtons');
+    quickButtons.innerHTML = '';
+    
+    const amounts = [
+        Math.min(1, available),
+        Math.min(Math.floor(available / 2), available),
+        available
+    ];
+    
+    amounts.forEach(amount => {
+        if (amount > 0) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-all';
+            btn.textContent = amount + ' ' + unit;
+            btn.onclick = () => {
+                document.getElementById('customAmount').value = amount;
+            };
+            quickButtons.appendChild(btn);
+        }
+    });
+}
+
+function closeConsumeModal() {
+    document.getElementById('consumeModal').classList.add('hidden');
+    document.getElementById('customAmount').value = '';
+}
+
+// Zamknij modal przy kliknięciu poza nim
+document.getElementById('consumeModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeConsumeModal();
+    }
+});
+</script>
+{% endblock %}

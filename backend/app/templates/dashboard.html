@@ -1,0 +1,104 @@
+<!-- Strona Podgląd -->
+<!-- Główny panel z podsumowaniem stanu lodówki -->
+{% extends "base.html" %}
+
+{% block title %}Podgląd - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- TODO: Kafelki z statystykami -->
+    <!-- TODO: Liczba produktów w lodówce -->
+    <!-- TODO: Liczba produktów wygasających -->
+    <!-- TODO: Liczba produktów przeterminowanych -->
+    <!-- TODO: Ostatnie operacje -->
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-2">Produkty w lodówce</h3>
+        <p class="text-3xl font-bold" id="totalProducts">-</p>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-2">Wygasające wkrótce</h3>
+        <p class="text-3xl font-bold text-yellow-600" id="expiringProducts">-</p>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-2">Przeterminowane</h3>
+        <p class="text-3xl font-bold text-red-600" id="expiredProducts">-</p>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-2">Ostatnia operacja</h3>
+        <p class="text-sm" id="lastOperation">-</p>
+    </div>
+</div>
+
+<!-- TODO: Sekcja z wykresami -->
+<!-- TODO: Sekcja z najnowszymi produktami -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pobieranie statystyk z API i aktualizacja widoku
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Pobranie liczby wszystkich produktów
+            const countResponse = await fetch('/fridge/api/count');
+            if (countResponse.ok) {
+                const countData = await countResponse.json();
+                document.getElementById('totalProducts').textContent = countData.count;
+            }
+            
+            // Pobranie liczby produktów wygasających jutro
+            const expiringSoonResponse = await fetch('/fridge/api/expiring_soon_count');
+            if (expiringSoonResponse.ok) {
+                const expiringSoonData = await expiringSoonResponse.json();
+                document.getElementById('expiringProducts').textContent = expiringSoonData.count;
+            }
+            
+            // Pobranie liczby przeterminowanych produktów
+            const expiredResponse = await fetch('/fridge/api/expired_count');
+            if (expiredResponse.ok) {
+                const expiredData = await expiredResponse.json();
+                document.getElementById('expiredProducts').textContent = expiredData.count;
+            }
+            
+            // Pobranie ostatniej operacji
+            const lastOpResponse = await fetch('/history/api/last_operation');
+            if (lastOpResponse.ok) {
+                const lastOpData = await lastOpResponse.json();
+                const lastOpElement = document.getElementById('lastOperation');
+                
+                if (lastOpData.exists) {
+                    // Formatowanie typu operacji
+                    const typeMap = {
+                        'dodano': 'Dodano',
+                        'zuzyto': 'Użyto',
+                        'usunieto': 'Usunięto'
+                    };
+                    const typeText = typeMap[lastOpData.type] || lastOpData.type;
+                    
+                    // Formatowanie daty
+                    const date = new Date(lastOpData.created_at);
+                    const dateText = date.toLocaleString('pl-PL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    lastOpElement.innerHTML = `
+                        <span class="font-semibold">${typeText}</span><br>
+                        ${lastOpData.amount} ${lastOpData.unit}<br>
+                        <span class="text-xs text-gray-500">${dateText}</span>
+                    `;
+                } else {
+                    lastOpElement.textContent = 'Brak operacji';
+                }
+            }
+        } catch (error) {
+            console.error('Błąd podczas pobierania statystyk:', error);
+        }
+    });
+</script>
+{% endblock %}
