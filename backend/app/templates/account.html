@@ -1,0 +1,195 @@
+<!-- Strona Moje konto - Panel użytkownika -->
+{% extends "base.html" %}
+
+{% block title %}Moje konto - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <h1 class="text-3xl font-bold mb-6 text-center">Moje konto</h1>
+    
+    <!-- Sekcja: Dane użytkownika -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-2xl font-semibold mb-4 text-green-700">Dane użytkownika</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <p class="text-gray-600 text-sm">Email</p>
+                <p class="text-lg font-semibold">{{ user_data.email }}</p>
+            </div>
+            
+            <div>
+                <p class="text-gray-600 text-sm">Rola</p>
+                <p class="text-lg font-semibold capitalize">{{ user_data.rola }}</p>
+            </div>
+            
+            <div>
+                <p class="text-gray-600 text-sm">Imię</p>
+                <p class="text-lg font-semibold">{{ user_data.imie or 'Nie podano' }}</p>
+            </div>
+            
+            <div>
+                <p class="text-gray-600 text-sm">Nazwisko</p>
+                <p class="text-lg font-semibold">{{ user_data.nazwisko or 'Nie podano' }}</p>
+            </div>
+            
+            <div>
+                <p class="text-gray-600 text-sm">Konto utworzono</p>
+                <p class="text-lg font-semibold">{{ user_data.utworzono.strftime('%d.%m.%Y %H:%M') }}</p>
+            </div>
+            
+            <div>
+                <p class="text-gray-600 text-sm">Ostatnia aktualizacja</p>
+                <p class="text-lg font-semibold">{{ user_data.zaktualizowano.strftime('%d.%m.%Y %H:%M') }}</p>
+            </div>
+        </div>
+        
+        <button id="editProfileBtn" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg text-lg">
+            Edytuj dane
+        </button>
+    </div>
+    
+    <!-- Sekcja: Statystyki -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-2xl font-semibold mb-4 text-green-700">Statystyki konta</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-green-50 p-4 rounded-lg border-2 border-green-200">
+                <p class="text-gray-600 text-sm mb-1">Aktywne produkty</p>
+                <p class="text-3xl font-bold text-green-700">{{ stats.active_products }}</p>
+            </div>
+            
+            <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                <p class="text-gray-600 text-sm mb-1">Wszystkie produkty</p>
+                <p class="text-3xl font-bold text-blue-700">{{ stats.total_products }}</p>
+            </div>
+            
+            <div class="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
+                <p class="text-gray-600 text-sm mb-1">Liczba operacji</p>
+                <p class="text-3xl font-bold text-orange-700">{{ stats.total_operations }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sekcja: Zmiana hasła -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-semibold mb-4 text-green-700">Zmiana hasła</h2>
+        
+        <form action="{{ url_for('auth.change_password') }}" method="post" class="space-y-4">
+            <div>
+                <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">
+                    Aktualne hasło
+                </label>
+                <input type="password" 
+                       id="current_password" 
+                       name="current_password"
+                       required
+                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <div>
+                <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">
+                    Nowe hasło
+                </label>
+                <input type="password" 
+                       id="new_password" 
+                       name="new_password"
+                       required
+                       minlength="6"
+                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <div>
+                <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">
+                    Potwierdź nowe hasło
+                </label>
+                <input type="password" 
+                       id="confirm_password" 
+                       name="confirm_password"
+                       required
+                       minlength="6"
+                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg text-lg">
+                Zmień hasło
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edycja profilu -->
+<div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-2xl font-semibold mb-4">Edytuj dane</h3>
+        
+        <form action="{{ url_for('auth.update_profile') }}" method="post" class="space-y-4">
+            <div>
+                <label for="edit_imie" class="block text-sm font-medium text-gray-700 mb-1">
+                    Imię
+                </label>
+                <input type="text" 
+                       id="edit_imie" 
+                       name="imie"
+                       value="{{ user_data.imie or '' }}"
+                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <div>
+                <label for="edit_nazwisko" class="block text-sm font-medium text-gray-700 mb-1">
+                    Nazwisko
+                </label>
+                <input type="text" 
+                       id="edit_nazwisko" 
+                       name="nazwisko"
+                       value="{{ user_data.nazwisko or '' }}"
+                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg text-lg">
+                    Zapisz
+                </button>
+                <button type="button"
+                        id="cancelEditBtn"
+                        class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg text-lg">
+                    Anuluj
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Modal obsługa
+    const modal = document.getElementById('editProfileModal');
+    const editBtn = document.getElementById('editProfileBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    
+    editBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+    
+    // Walidacja potwierdzenia hasła
+    const form = document.querySelector('form[action="{{ url_for("auth.change_password") }}"]');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                alert('Nowe hasło i potwierdzenie nie są identyczne!');
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -53,6 +53,11 @@
                     Wygasające wkrótce
                 </a>
 
+                <a href="{{ url_for('auth.account_page') }}"
+                   class="text-sm md:text-base font-semibold text-gray-700 hover:text-blue-600">
+                    Moje konto
+                </a>
+
                 <!-- Wyloguj -->
                 <form action="{{ url_for('auth.logout') }}" method="post" class="inline">
                     <button type="submit"
