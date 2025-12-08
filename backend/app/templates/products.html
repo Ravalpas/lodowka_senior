@@ -33,8 +33,8 @@
                 </thead>
                 <tbody>
                     {% for product in products %}
-                    <tr class="border-b hover:bg-gray-50 cursor-pointer" 
-                        onclick="window.location.href='{{ url_for('products.product_detail', item_id=product.item_id) }}'">
+                    <!-- Główny wiersz produktu -->
+                    <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-3 text-lg font-semibold">{{ product.nazwa }}</td>
                         <td class="px-4 py-3 text-lg">{{ product.marka or '-' }}</td>
                         <td class="px-4 py-3 text-lg">{{ product.kategoria or '-' }}</td>
@@ -58,25 +58,37 @@
                         {% else %}
                         <td class="px-4 py-3 text-center text-sm text-gray-400" colspan="4">
                             Brak danych odżywczych
-                            {% if product.barcode_13cyf %}
-                            <form method="post" 
-                                  action="{{ url_for('products.enrich_from_openfoodfacts', item_id=product.item_id) }}" 
-                                  class="inline"
-                                  onclick="event.stopPropagation()">
-                                <button type="submit" 
-                                        class="text-blue-600 hover:text-blue-800 underline ml-2">
-                                    Uzupełnij
-                                </button>
-                            </form>
-                            {% endif %}
+                            <button type="button" 
+                                    class="text-blue-600 hover:text-blue-800 underline ml-2 search-toggle"
+                                    data-item-id="{{ product.item_id }}"
+                                    data-product-name="{{ product.nazwa }}">
+                                🔍 Wyszukaj w OpenFoodFacts
+                            </button>
                         </td>
                         {% endif %}
                         
-                        <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
+                        <td class="px-4 py-3 text-center">
                             <a href="{{ url_for('products.product_detail', item_id=product.item_id) }}" 
                                class="text-blue-600 hover:text-blue-800 font-semibold">
                                 Szczegóły
                             </a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Rozwijany wiersz wyszukiwania -->
+                    <tr id="search-row-{{ product.item_id }}" class="hidden bg-blue-50">
+                        <td colspan="9" class="px-4 py-4">
+                            <div class="max-w-4xl mx-auto">
+                                <div class="mb-2 text-sm text-gray-600">
+                                    Wyszukiwanie produktu: <strong>{{ product.nazwa }}</strong>
+                                </div>
+                                <div id="search-results-{{ product.item_id }}" class="space-y-2">
+                                    <div class="text-center py-4">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <p class="mt-2 text-gray-600">Wyszukiwanie...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -95,4 +107,112 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obsługa przycisków wyszukiwania
+    document.querySelectorAll('.search-toggle').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const itemId = this.dataset.itemId;
+            const productName = this.dataset.productName;
+            const searchRow = document.getElementById(`search-row-${itemId}`);
+            
+            if (searchRow.classList.contains('hidden')) {
+                // Rozwiń i wyszukaj
+                searchRow.classList.remove('hidden');
+                searchOpenFoodFacts(itemId, productName);
+            } else {
+                // Zwiń
+                searchRow.classList.add('hidden');
+            }
+        });
+    });
+});
+
+async function searchOpenFoodFacts(itemId, productName) {
+    const resultsDiv = document.getElementById(`search-results-${itemId}`);
+    
+    try {
+        const response = await fetch(`/products/api/search?q=${encodeURIComponent(productName)}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            resultsDiv.innerHTML = `
+                <div class="text-center py-4 text-red-600">
+                    ${data.message}
+                </div>
+            `;
+            return;
+        }
+        
+        if (data.products.length === 0) {
+            resultsDiv.innerHTML = `
+                <div class="text-center py-4 text-gray-600">
+                    Nie znaleziono produktów dla "${productName}"
+                </div>
+            `;
+            return;
+        }
+        
+        // Wyświetl wyniki
+        let html = '<div class="space-y-2">';
+        data.products.forEach(product => {
+            html += `
+                <div class="bg-white border border-gray-300 rounded-lg p-3 hover:bg-blue-50 cursor-pointer"
+                     onclick="assignBarcode(${itemId}, '${product.barcode}')">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="font-semibold text-lg">${product.nazwa}</div>
+                            <div class="text-sm text-gray-600">
+                                Marka: ${product.marka || 'Brak'} | 
+                                Kod: <span class="font-mono">${product.barcode}</span>
+                            </div>
+                        </div>
+                        <div class="text-right text-sm ml-4">
+                            <div>Kcal: <strong>${product.kcal ? Math.round(product.kcal) : '-'}</strong></div>
+                            <div>Białko: ${product.bialko_g ? product.bialko_g.toFixed(1) + 'g' : '-'}</div>
+                            <div>Tłuszcz: ${product.tluszcz_g ? product.tluszcz_g.toFixed(1) + 'g' : '-'}</div>
+                            <div>Węgl.: ${product.weglowodany_g ? product.weglowodany_g.toFixed(1) + 'g' : '-'}</div>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        Kliknij aby przypisać ten produkt
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        resultsDiv.innerHTML = html;
+        
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="text-center py-4 text-red-600">
+                Błąd wyszukiwania: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function assignBarcode(itemId, barcode) {
+    if (!confirm('Czy chcesz przypisać ten produkt i pobrać jego dane z OpenFoodFacts?')) {
+        return;
+    }
+    
+    // Utwórz formularz i wyślij
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/products/${itemId}/assign-barcode`;
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'barcode';
+    input.value = barcode;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 {% endblock %}

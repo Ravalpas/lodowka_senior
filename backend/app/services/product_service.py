@@ -314,3 +314,76 @@ class ProductService:
                 'success': False,
                 'message': f'Błąd podczas usuwania produktu: {str(e)}'
             }
+    
+    @staticmethod
+    def search_openfoodfacts(search_term: str, page_size: int = 5) -> Dict:
+        """
+        Wyszukuje produkty w OpenFoodFacts po nazwie
+        
+        Args:
+            search_term: Fraza do wyszukania
+            page_size: Maksymalna liczba wyników (domyślnie 5)
+            
+        Returns:
+            Dict z wynikami wyszukiwania lub błędem
+        """
+        try:
+            # OpenFoodFacts Search API
+            search_url = "https://world.openfoodfacts.org/cgi/search.pl"
+            params = {
+                'search_terms': search_term,
+                'search_simple': 1,
+                'action': 'process',
+                'json': 1,
+                'page_size': page_size,
+                'fields': 'code,product_name,brands,categories,nutriments'
+            }
+            
+            response = requests.get(search_url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if data.get('count', 0) == 0:
+                return {
+                    'success': False,
+                    'message': 'Nie znaleziono produktów dla tej nazwy'
+                }
+            
+            # Formatuj wyniki
+            products = []
+            for product in data.get('products', [])[:page_size]:
+                nutriments = product.get('nutriments', {})
+                
+                products.append({
+                    'barcode': product.get('code'),
+                    'nazwa': product.get('product_name', 'Nieznana nazwa'),
+                    'marka': product.get('brands', ''),
+                    'kategoria': product.get('categories', ''),
+                    'kcal': nutriments.get('energy-kcal_100g') or nutriments.get('energy-kcal'),
+                    'bialko_g': nutriments.get('proteins_100g') or nutriments.get('proteins'),
+                    'tluszcz_g': nutriments.get('fat_100g') or nutriments.get('fat'),
+                    'weglowodany_g': nutriments.get('carbohydrates_100g') or nutriments.get('carbohydrates')
+                })
+            
+            return {
+                'success': True,
+                'products': products,
+                'count': len(products)
+            }
+            
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'message': 'Przekroczono czas oczekiwania na odpowiedź z OpenFoodFacts'
+            }
+        except requests.exceptions.RequestException as e:
+            return {
+                'success': False,
+                'message': f'Błąd połączenia z OpenFoodFacts: {str(e)}'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Błąd podczas wyszukiwania: {str(e)}'
+            }

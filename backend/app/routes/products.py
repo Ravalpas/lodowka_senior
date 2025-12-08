@@ -254,3 +254,114 @@ def enrich_from_openfoodfacts(item_id):
     except Exception as e:
         flash(f'Błąd podczas pobierania danych z OpenFoodFacts: {str(e)}', 'error')
         return redirect(url_for('products.products_page'))
+
+
+@bp.route('/api/search', methods=['GET'])
+@jwt_required()
+def search_openfoodfacts_api():
+    """API endpoint - wyszukuje produkty w OpenFoodFacts po nazwie"""
+    try:
+        search_term = request.args.get('q', '').strip()
+        
+        if not search_term or len(search_term) < 3:
+            return jsonify({
+                'success': False,
+                'message': 'Podaj co najmniej 3 znaki do wyszukania'
+            }), 400
+        
+        from app.services.product_service import ProductService
+        result = ProductService.search_openfoodfacts(search_term, page_size=5)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Błąd wyszukiwania: {str(e)}'
+        }), 500
+
+
+@bp.route('/<int:item_id>/assign-barcode', methods=['POST'])
+@jwt_required()
+def assign_barcode(item_id):
+    """Przypisuje kod kreskowy z OpenFoodFacts do produktu i pobiera dane"""
+    try:
+        current_user_id = get_jwt_identity()
+        barcode = request.form.get('barcode')
+        
+        if not barcode:
+            flash('Brak kodu kreskowego', 'error')
+            return redirect(url_for('products.products_page'))
+        
+        # Znajdź lodówkę użytkownika
+        lodowka = Lodowka.query.filter_by(wlasciciel_id=current_user_id, usunieto=None).first()
+        if not lodowka:
+            flash('Nie znaleziono Twojej lodówki', 'error')
+            return redirect(url_for('products.products_page'))
+        
+        # Znajdź pozycję w lodówce
+        base_item = db.session.query(FridgeItem)\
+            .filter(FridgeItem.id == item_id)\
+            .filter(FridgeItem.lodowka_id == lodowka.id)\
+            .filter(FridgeItem.usunieto.is_(None))\
+            .first()
+        
+        if not base_item:
+            flash('Produkt nie znaleziony w Twojej lodówce', 'error')
+            return redirect(url_for('products.products_page'))
+        
+        # Jeśli produkt nie ma produkt_id, utwórz nowy rekord w tabeli produkty
+        if not base_item.produkt_id:
+            product = Product(
+                nazwa=base_item.nazwa_wlasna,
+                barcode_13cyf=barcode,
+                domyslna_jednostka_g_ml_szt=base_item.jednostka_g_ml_szt
+            )
+            db.session.add(product)
+            db.session.flush()  # Pobierz ID
+            
+            # Przypisz produkt_id do wszystkich pozycji z tej samej grupy
+            grouped_items = db.session.query(FridgeItem)\
+                .filter(FridgeItem.lodowka_id == lodowka.id)\
+                .filter(FridgeItem.usunieto.is_(None))\
+                .filter(FridgeItem.produkt_id.is_(None))\
+                .filter(FridgeItem.nazwa_wlasna == base_item.nazwa_wlasna)\
+                .all()
+            
+            for item in grouped_items:
+                item.produkt_id = product.id
+        else:
+            # Zaktualizuj kod kreskowy istniejącego produktu
+            product = db.session.query(Product).get(base_item.produkt_id)
+            if not product:
+                flash('Błąd: Produkt nie istnieje', 'error')
+                return redirect(url_for('products.products_page'))
+            
+            product.barcode_13cyf = barcode
+        
+        db.session.commit()
+        
+        # Pobierz dane z OpenFoodFacts
+        from app.services.product_service import ProductService
+        enrich_result = ProductService.enrich_from_openfoodfacts(barcode, product.id)
+        
+        if enrich_result['success']:
+            # Zaktualizuj nazwę produktu jeśli została pobrana z API
+            if enrich_result.get('data', {}).get('nazwa'):
+                product.nazwa = enrich_result['data']['nazwa']
+            if enrich_result.get('data', {}).get('marka'):
+                product.marka = enrich_result['data']['marka']
+            if enrich_result.get('data', {}).get('kategoria'):
+                product.kategoria = enrich_result['data']['kategoria']
+            
+            db.session.commit()
+            flash('Dane produktu zaktualizowane z OpenFoodFacts', 'success')
+        else:
+            flash(f'Przypisano kod kreskowy, ale nie udało się pobrać danych: {enrich_result["message"]}', 'warning')
+        
+        return redirect(url_for('products.product_detail', item_id=item_id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Błąd podczas przypisywania kodu: {str(e)}', 'error')
+        return redirect(url_for('products.products_page'))
