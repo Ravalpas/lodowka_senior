@@ -197,8 +197,22 @@ def get_fridge_count():
     user_id = int(get_jwt_identity())
     
     # Zlicz produkty w lodówce użytkownika
+    # Używamy COUNT(DISTINCT ...) aby liczyć zgrupowane produkty,
+    # tak jak są wyświetlane w widoku lodówki (grupowanie po produkt_id, nazwa_wlasna, wazne_do)
     count = (
-        db.session.query(func.count(FridgeItem.id))
+        db.session.query(
+            func.count(
+                func.distinct(
+                    func.concat(
+                        func.coalesce(FridgeItem.produkt_id, 0),
+                        '|',
+                        func.coalesce(FridgeItem.nazwa_wlasna, ''),
+                        '|',
+                        func.coalesce(FridgeItem.wazne_do, '')
+                    )
+                )
+            )
+        )
         .join(Lodowka, FridgeItem.lodowka_id == Lodowka.id)
         .filter(Lodowka.wlasciciel_id == user_id)
         .filter(FridgeItem.usunieto.is_(None))

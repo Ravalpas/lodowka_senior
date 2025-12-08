@@ -17,6 +17,9 @@ bcrypt==4.1.2
 # Zmienne środowiskowe
 python-dotenv==1.0.0
 
+# HTTP requests (dla OpenFoodFacts API)
+requests==2.31.0
+
 # TODO: Dodać w razie potrzeby:
 # Flask-CORS==4.0.0  # Jeśli frontend będzie w osobnej domenie
 # Flask-Migrate==4.0.5  # Do zarządzania migracjami bazy danych

@@ -6,6 +6,7 @@ from flask_jwt_extended import (
     jwt_required, get_jwt_identity, set_access_cookies, 
     unset_jwt_cookies
 )
+from sqlalchemy import func
 from ..services.auth_service import AuthService
 
 bp = Blueprint('auth', __name__)
@@ -171,13 +172,26 @@ def account_page():
         return redirect(url_for('auth.login_page'))
     
     # Statystyki
-    # Liczba aktywnych produktów (nie usunięte)
-    active_products = db.session.query(FridgeItem).join(
+    # Liczba aktywnych produktów (zgrupowanych jak w widoku lodówki)
+    # Liczymy DISTINCT po (produkt_id, nazwa_wlasna, wazne_do)
+    active_products = db.session.query(
+        func.count(
+            func.distinct(
+                func.concat(
+                    func.coalesce(FridgeItem.produkt_id, 0),
+                    '|',
+                    func.coalesce(FridgeItem.nazwa_wlasna, ''),
+                    '|',
+                    func.coalesce(FridgeItem.wazne_do, '')
+                )
+            )
+        )
+    ).join(
         Lodowka, FridgeItem.lodowka_id == Lodowka.id
     ).filter(
         Lodowka.wlasciciel_id == current_user_id,
         FridgeItem.usunieto == None
-    ).count()
+    ).scalar()
     
     # Liczba wszystkich produktów (włącznie z usuniętymi)
     total_products = db.session.query(FridgeItem).join(

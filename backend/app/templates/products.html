@@ -1,0 +1,98 @@
+<!-- Strona Moje produkty - Lista produktów z wartościami odżywczymi -->
+{% extends "base.html" %}
+
+{% block title %}Moje produkty - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">📦 Moje produkty</h1>
+        <a href="{{ url_for('fridge.add_fridge_item_page') }}" 
+           class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg text-lg">
+            + Dodaj do lodówki
+        </a>
+    </div>
+    
+    <!-- Tabela produktów -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        {% if products %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-green-700 text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-lg">Nazwa</th>
+                        <th class="px-4 py-3 text-left text-lg">Marka</th>
+                        <th class="px-4 py-3 text-left text-lg">Kategoria</th>
+                        <th class="px-4 py-3 text-left text-lg">Kod kreskowy</th>
+                        <th class="px-4 py-3 text-center text-lg">Kcal/100g</th>
+                        <th class="px-4 py-3 text-center text-lg">Białko/100g</th>
+                        <th class="px-4 py-3 text-center text-lg">Tłuszcz/100g</th>
+                        <th class="px-4 py-3 text-center text-lg">Węgl./100g</th>
+                        <th class="px-4 py-3 text-center text-lg">Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr class="border-b hover:bg-gray-50 cursor-pointer" 
+                        onclick="window.location.href='{{ url_for('products.product_detail', item_id=product.item_id) }}'">
+                        <td class="px-4 py-3 text-lg font-semibold">{{ product.nazwa }}</td>
+                        <td class="px-4 py-3 text-lg">{{ product.marka or '-' }}</td>
+                        <td class="px-4 py-3 text-lg">{{ product.kategoria or '-' }}</td>
+                        <td class="px-4 py-3 text-lg font-mono">{{ product.barcode_13cyf or '-' }}</td>
+                        
+                        {% if product.wartosci_odzywcze %}
+                        <td class="px-4 py-3 text-center text-lg">
+                            <span class="font-semibold text-orange-700">
+                                {{ product.wartosci_odzywcze.kcal|round(1) if product.wartosci_odzywcze.kcal else '-' }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center text-lg">
+                            {{ product.wartosci_odzywcze.bialko_g|round(1) if product.wartosci_odzywcze.bialko_g else '-' }}g
+                        </td>
+                        <td class="px-4 py-3 text-center text-lg">
+                            {{ product.wartosci_odzywcze.tluszcz_g|round(1) if product.wartosci_odzywcze.tluszcz_g else '-' }}g
+                        </td>
+                        <td class="px-4 py-3 text-center text-lg">
+                            {{ product.wartosci_odzywcze.weglowodany_g|round(1) if product.wartosci_odzywcze.weglowodany_g else '-' }}g
+                        </td>
+                        {% else %}
+                        <td class="px-4 py-3 text-center text-sm text-gray-400" colspan="4">
+                            Brak danych odżywczych
+                            {% if product.barcode_13cyf %}
+                            <form method="post" 
+                                  action="{{ url_for('products.enrich_from_openfoodfacts', item_id=product.item_id) }}" 
+                                  class="inline"
+                                  onclick="event.stopPropagation()">
+                                <button type="submit" 
+                                        class="text-blue-600 hover:text-blue-800 underline ml-2">
+                                    Uzupełnij
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                        
+                        <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
+                            <a href="{{ url_for('products.product_detail', item_id=product.item_id) }}" 
+                               class="text-blue-600 hover:text-blue-800 font-semibold">
+                                Szczegóły
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-gray-500">
+            <p class="text-xl mb-4">Nie masz jeszcze produktów w lodówce</p>
+            <p class="text-lg">
+                <a href="{{ url_for('fridge.add_fridge_item_page') }}" class="text-green-600 hover:text-green-800 font-semibold underline">
+                    Dodaj pierwszy produkt do lodówki
+                </a>
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
