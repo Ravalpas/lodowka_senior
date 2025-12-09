@@ -47,12 +47,13 @@ def create_app(config_class=Config):
             return {'user_logged_in': False, 'user_name': None}
     
     # Rejestracja blueprintów
-    from .routes import auth, fridge, history, logs, products
+    from .routes import auth, fridge, history, logs, products, ai
     app.register_blueprint(auth.bp)
     app.register_blueprint(fridge.bp)
     app.register_blueprint(history.bp)
     app.register_blueprint(logs.bp)
     app.register_blueprint(products.bp)
+    app.register_blueprint(ai.bp)  # Nowy blueprint dla AI Asystenta Kucharza
     
     # TODO: Dodać obsługę błędów (error handlers)
     # TODO: Dodać CORS jeśli potrzebne

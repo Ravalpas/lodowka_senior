@@ -321,11 +321,13 @@ def assign_barcode(item_id):
             db.session.flush()  # Pobierz ID
             
             # Przypisz produkt_id do wszystkich pozycji z tej samej grupy
+            # WAŻNE: Grupujemy po (nazwa_wlasna, wazne_do) - nie łączymy produktów o różnych datach!
             grouped_items = db.session.query(FridgeItem)\
                 .filter(FridgeItem.lodowka_id == lodowka.id)\
                 .filter(FridgeItem.usunieto.is_(None))\
                 .filter(FridgeItem.produkt_id.is_(None))\
                 .filter(FridgeItem.nazwa_wlasna == base_item.nazwa_wlasna)\
+                .filter(FridgeItem.wazne_do == base_item.wazne_do)\
                 .all()
             
             for item in grouped_items:

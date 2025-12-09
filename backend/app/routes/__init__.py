@@ -5,5 +5,7 @@ from . import auth
 from . import fridge
 from . import history
 from . import logs
+from . import products
+from . import ai
 
-__all__ = ['auth', 'fridge', 'history', 'logs']
+__all__ = ['auth', 'fridge', 'history', 'logs', 'products', 'ai']

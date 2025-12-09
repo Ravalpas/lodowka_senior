@@ -1,0 +1,346 @@
+<!-- Asystent Kucharza - interfejs chatowy z przepisami AI -->
+{% extends "base.html" %}
+
+{% block title %}Asystent Kucharza - Lodówka Senior+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="mb-6">
+        <h1 class="text-4xl font-bold text-purple-700 mb-2">👨‍🍳 Asystent Kucharza</h1>
+        <p class="text-xl text-gray-600">Wygeneruj przepisy na podstawie produktów w Twojej lodówce</p>
+        <p class="text-lg text-gray-500 mt-2">
+            📦 Masz <strong id="products-count">{{ products_count }}</strong> produktów w lodówce
+        </p>
+    </div>
+
+    <!-- Główny kontener: chat + przepisy -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Lewa kolumna: Przepisy -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-purple-700">📖 Proponowane Przepisy</h2>
+                
+                <!-- Status ładowania -->
+                <div id="loading-recipes" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mb-4"></div>
+                    <p class="text-xl text-gray-600">Wczytuję przepisy...</p>
+                    <p class="text-sm text-gray-500 mt-2">To może potrwać kilkadziesiąt sekund...</p>
+                </div>
+                
+                <!-- Komunikat błędu -->
+                <div id="error-recipes" class="hidden bg-red-50 border-2 border-red-300 rounded-lg p-6 text-center">
+                    <p class="text-xl text-red-700 font-semibold mb-2">⚠️ Wystąpił błąd</p>
+                    <p id="error-message" class="text-gray-700"></p>
+                    <button onclick="loadRecipes()" 
+                            class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg text-lg">
+                        🔄 Spróbuj ponownie
+                    </button>
+                </div>
+                
+                <!-- Lista przepisów -->
+                <div id="recipes-container" class="hidden space-y-6">
+                    <!-- Przepisy będą wstawiane dynamicznie przez JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prawa kolumna: Chat -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-lg p-6 sticky top-4">
+                <h2 class="text-2xl font-semibold mb-4 text-purple-700">💬 Dodatkowe wymagania</h2>
+                
+                <div class="mb-4 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-gray-700">
+                        <strong>💡 Wskazówka:</strong><br>
+                        Możesz doprecyzować swoje oczekiwania, np.:
+                    </p>
+                    <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                        <li>• "Chcę coś słodkiego"</li>
+                        <li>• "Maksymalnie 500 kcal"</li>
+                        <li>• "Szybkie danie na obiad"</li>
+                        <li>• "Bez cukru"</li>
+                    </ul>
+                </div>
+                
+                <div class="space-y-4">
+                    <textarea 
+                        id="user-message" 
+                        rows="4"
+                        placeholder="Wpisz dodatkowe wymagania..."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                    
+                    <button 
+                        id="generate-btn"
+                        onclick="generateRecipesWithRequirements()"
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg text-xl shadow-lg transition-all">
+                        ✨ Wygeneruj przepisy
+                    </button>
+                    
+                    <button 
+                        onclick="loadRecipes()"
+                        class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg text-lg">
+                        🔄 Odśwież bez wymagań
+                    </button>
+                </div>
+                
+                <!-- Historia wymagań -->
+                <div id="chat-history" class="mt-6 hidden">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Twoje wymagania:</h3>
+                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <p id="last-requirement" class="text-sm text-gray-700 italic"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Automatyczne ładowanie przepisów przy starcie strony
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecipes();
+});
+
+/**
+ * Ładuje przepisy bez dodatkowych wymagań
+ */
+async function loadRecipes() {
+    showLoading();
+    
+    try {
+        const response = await fetch('/ai/kucharz', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            showError(data.message || 'Nie udało się wygenerować przepisów');
+            return;
+        }
+        
+        displayRecipes(data);
+        
+    } catch (error) {
+        showError('Błąd połączenia: ' + error.message);
+    }
+}
+
+/**
+ * Generuje przepisy z dodatkowymi wymaganiami użytkownika
+ */
+async function generateRecipesWithRequirements() {
+    const userMessage = document.getElementById('user-message').value.trim();
+    
+    if (!userMessage) {
+        // Jeśli puste, po prostu przeładuj bez wymagań
+        loadRecipes();
+        return;
+    }
+    
+    showLoading();
+    
+    // Zapisz wymaganie w historii
+    document.getElementById('chat-history').classList.remove('hidden');
+    document.getElementById('last-requirement').textContent = userMessage;
+    
+    try {
+        const response = await fetch('/ai/kucharz', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_message: userMessage
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            showError(data.message || 'Nie udało się wygenerować przepisów');
+            return;
+        }
+        
+        displayRecipes(data);
+        
+    } catch (error) {
+        showError('Błąd połączenia: ' + error.message);
+    }
+}
+
+/**
+ * Wyświetla status ładowania
+ */
+function showLoading() {
+    document.getElementById('loading-recipes').classList.remove('hidden');
+    document.getElementById('error-recipes').classList.add('hidden');
+    document.getElementById('recipes-container').classList.add('hidden');
+    
+    // Wyłącz przycisk generowania
+    document.getElementById('generate-btn').disabled = true;
+    document.getElementById('generate-btn').classList.add('opacity-50', 'cursor-not-allowed');
+}
+
+/**
+ * Wyświetla komunikat błędu
+ */
+function showError(message) {
+    document.getElementById('loading-recipes').classList.add('hidden');
+    document.getElementById('error-recipes').classList.remove('hidden');
+    document.getElementById('recipes-container').classList.add('hidden');
+    document.getElementById('error-message').textContent = message;
+    
+    // Włącz przycisk generowania
+    document.getElementById('generate-btn').disabled = false;
+    document.getElementById('generate-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+}
+
+/**
+ * Wyświetla przepisy w eleganckich kartach
+ */
+function displayRecipes(data) {
+    document.getElementById('loading-recipes').classList.add('hidden');
+    document.getElementById('error-recipes').classList.add('hidden');
+    document.getElementById('recipes-container').classList.remove('hidden');
+    
+    // Włącz przycisk generowania
+    document.getElementById('generate-btn').disabled = false;
+    document.getElementById('generate-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+    
+    const container = document.getElementById('recipes-container');
+    const recipes = data.recipes || [];
+    
+    if (recipes.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-600">
+                <p class="text-xl">Nie udało się wygenerować przepisów</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Wyświetl informację o produktach
+    if (data.products_count) {
+        document.getElementById('products-count').textContent = data.products_count;
+    }
+    
+    // Komunikat o trybie AI
+    let aiModeMessage = '';
+    if (data.ai_mode === 'fallback') {
+        aiModeMessage = `
+            <div class="mb-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <p class="text-lg text-yellow-800">
+                    <strong>ℹ️ Tryb podstawowy:</strong><br>
+                    ${data.message || 'Wyświetlam przykładowe przepisy. Zainstaluj Ollama aby otrzymać spersonalizowane przepisy AI.'}
+                </p>
+                <a href="https://ollama.com" target="_blank" class="text-blue-600 hover:underline text-sm mt-2 inline-block">
+                    📥 Pobierz Ollama
+                </a>
+            </div>
+        `;
+    } else if (data.ai_mode === 'ollama') {
+        aiModeMessage = `
+            <div class="mb-4 bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                <p class="text-lg text-green-800">
+                    <strong>✨ Tryb AI:</strong> Przepisy wygenerowane przez sztuczną inteligencję
+                </p>
+            </div>
+        `;
+    }
+    
+    // Wygeneruj HTML dla każdego przepisu
+    container.innerHTML = aiModeMessage + recipes.map((recipe, index) => `
+        <div class="border-2 border-purple-200 rounded-lg p-6 bg-gradient-to-br from-white to-purple-50 shadow-md hover:shadow-lg transition-shadow">
+            <!-- Nagłówek przepisu -->
+            <div class="mb-4 pb-3 border-b-2 border-purple-200">
+                <h3 class="text-2xl font-bold text-purple-800 mb-1">
+                    ${index + 1}. ${escapeHtml(recipe.title || 'Bez nazwy')}
+                </h3>
+                ${recipe.calories_per_100g ? `
+                    <p class="text-lg text-orange-600 font-semibold">
+                        🔥 ${Math.round(recipe.calories_per_100g)} kcal / 100g
+                    </p>
+                ` : ''}
+            </div>
+            
+            <!-- Składniki z lodówki -->
+            <div class="mb-4">
+                <h4 class="text-xl font-semibold text-green-700 mb-2">✅ Składniki z Twojej lodówki:</h4>
+                <ul class="space-y-1">
+                    ${(recipe.ingredients_from_fridge || []).map(ing => `
+                        <li class="text-lg text-gray-800 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                            • ${escapeHtml(ing)}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+            
+            <!-- Składniki do dokupienia -->
+            ${(recipe.ingredients_to_buy && recipe.ingredients_to_buy.length > 0) ? `
+                <div class="mb-4">
+                    <h4 class="text-xl font-semibold text-blue-700 mb-2">🛒 Do dokupienia:</h4>
+                    <ul class="space-y-1">
+                        ${recipe.ingredients_to_buy.map(ing => `
+                            <li class="text-lg text-gray-800 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                                • ${escapeHtml(ing)}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            ` : `
+                <div class="mb-4">
+                    <p class="text-lg text-green-600 font-semibold bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                        ✨ Wszystkie składniki masz już w lodówce!
+                    </p>
+                </div>
+            `}
+            
+            <!-- Sposób wykonania -->
+            <div class="mb-3">
+                <h4 class="text-xl font-semibold text-purple-700 mb-3">📝 Sposób wykonania:</h4>
+                <ol class="space-y-3">
+                    ${(recipe.steps || []).map((step, idx) => `
+                        <li class="text-lg text-gray-800 bg-white px-4 py-3 rounded-md border-l-4 border-purple-400 shadow-sm">
+                            <span class="font-bold text-purple-600">Krok ${idx + 1}:</span> ${escapeHtml(step)}
+                        </li>
+                    `).join('')}
+                </ol>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Zabezpiecza HTML przed XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+
+<style>
+/* Dodatkowe style dla lepszej czytelności na dużych ekranach */
+@media (min-width: 1024px) {
+    #recipes-container {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+}
+
+/* Animacja ładowania */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+</style>
+{% endblock %}

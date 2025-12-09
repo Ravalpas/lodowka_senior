@@ -466,14 +466,13 @@ def consume_fridge_item(item_id):
         return "Nieprawidłowa ilość", 400
     
     # Znajdź wszystkie pozycje z tej samej grupy
+    # WAŻNE: Grupujemy po (produkt_id, nazwa_wlasna, wazne_do)
     group_items = (
         db.session.query(FridgeItem)
         .filter(FridgeItem.lodowka_id == lodowka.id)
         .filter(FridgeItem.usunieto.is_(None))
-        .filter(
-            (FridgeItem.produkt_id == item.produkt_id) if item.produkt_id 
-            else (FridgeItem.nazwa_wlasna == item.nazwa_wlasna)
-        )
+        .filter(FridgeItem.produkt_id == item.produkt_id)
+        .filter(FridgeItem.nazwa_wlasna == item.nazwa_wlasna)
         .filter(FridgeItem.wazne_do == item.wazne_do)
         .all()
     )
@@ -614,15 +613,14 @@ def discard_fridge_item(item_id):
     items_to_discard = []
     
     if discard_group:
-        # Znajdź wszystkie pozycje z tą samą grupą (produkt + data ważności)
+        # Znajdź wszystkie pozycje z tą samą grupą (produkt_id + nazwa + data ważności)
+        # WAŻNE: Grupujemy po (produkt_id, nazwa_wlasna, wazne_do)
         items_to_discard = (
             db.session.query(FridgeItem)
             .filter(FridgeItem.lodowka_id == lodowka.id)
             .filter(FridgeItem.usunieto.is_(None))
-            .filter(
-                (FridgeItem.produkt_id == item.produkt_id) if item.produkt_id 
-                else (FridgeItem.nazwa_wlasna == item.nazwa_wlasna)
-            )
+            .filter(FridgeItem.produkt_id == item.produkt_id)
+            .filter(FridgeItem.nazwa_wlasna == item.nazwa_wlasna)
             .filter(FridgeItem.wazne_do == item.wazne_do)
             .all()
         )
